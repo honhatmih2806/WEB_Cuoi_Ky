@@ -1,6 +1,6 @@
 # 📋 BẢNG PHÂN CÔNG NHIỆM VỤ — THÀNH VIÊN 2
 
-> **Dự Án:** Hệ Thống Thương Mại Điện Tử TECH STORE JAPAN  
+> **Dự Án:** Hệ Thống Thương Mại Điện Tử UteTechStore  
 > **Người thực hiện:** Thành viên 2  
 > **Trách nhiệm:** Xây dựng Công cụ Định giá sản phẩm & Hoàn thiện Backend Tìm kiếm theo Giá / Tên  
 > **Thời hạn khuyến nghị:** 2 - 3 ngày  
@@ -106,7 +106,7 @@ class TradeInRequest(BaseModel):
 class TradeInEstimateResponse(BaseModel):
     model_name: str
     base_estimated_value: int = Field(..., description="Giá trị định giá máy cũ (VNĐ)")
-    trade_in_bonus: int = Field(..., description="Trợ giá lên đời độc quyền từ Tech Store (VNĐ)")
+    trade_in_bonus: int = Field(..., description="Trợ giá lên đời độc quyền từ UteTechStore (VNĐ)")
     total_deduction: int = Field(..., description="Tổng số tiền được trừ khi mua sản phẩm mới (VNĐ)")
     recommendations: List[str] = Field(default=[], description="Các sản phẩm mới phù hợp để lên đời")
 ```
@@ -116,7 +116,7 @@ class TradeInEstimateResponse(BaseModel):
   - Máy Grade A (Đẹp như mới 99%): 100% mức giá cơ sở thị trường.
   - Máy Grade B (Trầy xước nhẹ 95%): 85% mức giá cơ sở.
   - Máy Grade C (Cũ theo thời gian 90%): 70% mức giá cơ sở.
-  - **Chính sách trợ giá Tech Store:** Tặng thêm **1.000.000₫ - 2.000.000₫** trợ giá thu cũ đổi mới.
+  - **Chính sách trợ giá UteTechStore:** Tặng thêm **1.000.000₫ - 2.000.000₫** trợ giá thu cũ đổi mới.
 - Cung cấp endpoint: `POST /api/v1/pricing/trade-in-estimate`.
 
 #### 3. Tạo Giao Diện Định Giá Frontend (`apps/web/src/components/TradeInModal.tsx`):
@@ -125,7 +125,7 @@ class TradeInEstimateResponse(BaseModel):
   2. **Bước 2:** Chọn tình trạng máy (99% / 95% / 90%).
   3. **Bước 3:** Nhấn **"Định Giá Ngay"** -> Hiển thị kết quả:
      - Giá trị máy cũ thu mua: `XX.000.000₫`
-     - Trợ giá Tech Store: `+1.500.000₫`
+     - Trợ giá UteTechStore: `+1.500.000₫`
      - **Tổng giá trị khấu trừ:** `YY.000.000₫`
      - Nút kêu gọi hành động: **"Áp Dụng Vào Giỏ Hàng Lên Đời"** (tự động tạo voucher giảm giá khấu trừ vào giỏ hàng).
 

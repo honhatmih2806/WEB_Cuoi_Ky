@@ -77,20 +77,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           }}
           className="cursor-pointer group flex items-center gap-3 select-none"
         >
-          <div className="w-9 h-9 rounded-lg bg-gray-950 flex items-center justify-center text-white font-black text-sm tracking-tighter">
-            TS
+          <div className="w-9 h-9 rounded-lg bg-gray-950 flex items-center justify-center text-white font-black text-xs tracking-tighter">
+            UTE
           </div>
           <div>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold tracking-tight text-gray-950 group-hover:text-black">
-                TECH STORE
+                UteTechStore
               </span>
               <span className="text-[9px] font-bold tracking-widest px-1.5 py-0.5 border border-gray-300 text-gray-700 uppercase rounded">
-                JAPAN
+                PREMIUM
               </span>
             </div>
             <p className="text-[10px] text-gray-500 tracking-wider font-medium uppercase hidden sm:block">
-              Premium Electronics & Computing
+              Hệ Thống Thiết Bị Công Nghệ Cao Cấp
             </p>
           </div>
         </div>

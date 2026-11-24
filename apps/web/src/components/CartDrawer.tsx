@@ -32,11 +32,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
   // Voucher discount calculation
   let discount = 0;
-  if (appliedVoucher === 'TITANVIP') {
+  if (appliedVoucher === 'UTEVIP' || appliedVoucher === 'TITANVIP') {
     discount = Math.min(Math.round(subtotal * 0.05), 3000000);
   } else if (appliedVoucher === 'LUXURY' || appliedVoucher === 'SYNERGY') {
     discount = Math.min(Math.round(subtotal * 0.10), 6000000);
-  } else if (appliedVoucher === 'TECHSTORE' && subtotal >= 20000000) {
+  } else if ((appliedVoucher === 'UTETECHSTORE' || appliedVoucher === 'TECHSTORE') && subtotal >= 20000000) {
     discount = 1000000;
   }
 
@@ -49,10 +49,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       setAppliedVoucher('');
       return;
     }
-    if (code === 'TITANVIP' || code === 'LUXURY' || code === 'SYNERGY' || code === 'TECHSTORE') {
+    if (code === 'UTEVIP' || code === 'TITANVIP' || code === 'LUXURY' || code === 'SYNERGY' || code === 'UTETECHSTORE' || code === 'TECHSTORE') {
       setAppliedVoucher(code);
     } else {
-      setVoucherError('Mã không hợp lệ. Gợi ý: TITANVIP (giảm 5%), LUXURY (giảm 10%)');
+      setVoucherError('Mã không hợp lệ. Gợi ý: UTEVIP (giảm 5%), LUXURY (giảm 10%), UTETECHSTORE (giảm 1.000.000đ)');
     }
   };
 

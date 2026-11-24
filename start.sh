@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🚀 [TECH STORE JAPAN] Đang khởi động toàn bộ hệ thống..."
+echo "🚀 [UteTechStore] Đang khởi động toàn bộ hệ thống..."
 
 if [ ! -f .env ]; then
   echo "⚠️ Không tìm thấy file .env, tự động tạo từ .env.example..."
@@ -58,10 +58,7 @@ fi
 
 echo ""
 echo "=========================================================================="
-echo "✅ CỬA HÀNG TECH STORE JAPAN ĐÃ SẴN SÀNG!"
-
-
-
+echo "✅ CỬA HÀNG UTETECHSTORE ĐÃ SẴN SÀNG!"
 echo "👉 Cửa hàng Web (Next.js 14):  http://localhost:3000"
 echo "👉 Tài liệu Swagger API (FastAPI): http://localhost:8000/docs"
 echo "👉 Kiểm tra sức khỏe hệ thống:     http://localhost:8000/health"

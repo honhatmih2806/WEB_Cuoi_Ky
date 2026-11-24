@@ -15,14 +15,14 @@ if not os.path.exists(venv_python):
 
 python_bin = venv_python if os.path.exists(venv_python) else sys.executable
 
-print(f"🌟 [TECH STORE] Using Python: {python_bin}")
-print("🌟 [TECH STORE] Starting FastAPI Backend on http://127.0.0.1:8000...")
+print(f"🌟 [UteTechStore] Using Python: {python_bin}")
+print("🌟 [UteTechStore] Starting FastAPI Backend on http://127.0.0.1:8000...")
 api_proc = subprocess.Popen(
     [python_bin, "-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8000"],
     cwd=API_DIR
 )
 
-print("🌟 [TECH STORE] Starting Next.js Web Server on http://localhost:3000...")
+print("🌟 [UteTechStore] Starting Next.js Web Server on http://localhost:3000...")
 web_proc = subprocess.Popen(
     "npm run dev",
     shell=True,
@@ -31,7 +31,7 @@ web_proc = subprocess.Popen(
 
 print("")
 print("==========================================================================")
-print("🚀 TECH STORE JAPAN IS RUNNING!")
+print("🚀 UTETECHSTORE IS RUNNING!")
 print("   - Frontend URL:        http://localhost:3000")
 print("   - Backend Swagger API: http://localhost:8000/docs")
 print("   - Health check:        http://localhost:8000/health")

@@ -23,7 +23,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }) => {
   const [formData, setFormData] = useState({
     name: 'Nguyễn Văn Hùng',
-    email: 'hung.nguyen@techstore.vn',
+    email: 'hung.nguyen@utetechstore.com',
     phone: '0988776655',
     address: 'Toà nhà Bitexco, 2 Hải Triều, P. Bến Nghé, Quận 1, TP. Hồ Chí Minh',
     paymentMethod: 'BANKING_QR', // COD, BANKING_QR

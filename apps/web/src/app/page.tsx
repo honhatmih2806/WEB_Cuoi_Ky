@@ -318,7 +318,7 @@ export default function StoreHomePage() {
               Cần Báo Giá Cấu Hình Dự Án Hoặc Mua Số Lượng Lớn?
             </h3>
             <p className="text-xs text-gray-400 leading-relaxed">
-              TECH STORE cung cấp hợp đồng thương mại trọn gói: Hóa đơn điện tử VAT, chính sách chiết khấu theo khối lượng đơn hàng, và hỗ trợ bảo hành tận nơi cho doanh nghiệp trên toàn quốc.
+              UteTechStore cung cấp hợp đồng thương mại trọn gói: Hóa đơn điện tử VAT, chính sách chiết khấu theo khối lượng đơn hàng, và hỗ trợ bảo hành tận nơi cho doanh nghiệp trên toàn quốc.
             </p>
           </div>
 

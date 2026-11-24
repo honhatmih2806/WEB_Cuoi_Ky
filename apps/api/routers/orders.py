@@ -76,16 +76,16 @@ def checkout(payload: CheckoutInput, db: Session = Depends(get_db)):
     voucher_code_applied = None
     if payload.voucher_code:
         code_clean = payload.voucher_code.strip().upper()
-        if code_clean == "TITANVIP":
+        if code_clean in ("UTEVIP", "TITANVIP"):
             discount_amount = min(int(total_amount * 0.05), 2000000)
-            voucher_code_applied = "TITANVIP (Giảm 5%)"
-        elif code_clean == "SYNERGY":
+            voucher_code_applied = f"{code_clean} (Giảm 5%)"
+        elif code_clean in ("LUXURY", "SYNERGY"):
             discount_amount = min(int(total_amount * 0.10), 5000000)
-            voucher_code_applied = "SYNERGY (Giảm 10% Combo)"
-        elif code_clean == "APPLE2026":
-            if total_amount >= 30000000:
+            voucher_code_applied = f"{code_clean} (Giảm 10%)"
+        elif code_clean in ("UTETECHSTORE", "APPLE2026"):
+            if total_amount >= 20000000:
                 discount_amount = 1000000
-                voucher_code_applied = "APPLE2026 (Giảm 1.000.000đ)"
+                voucher_code_applied = f"{code_clean} (Giảm 1.000.000đ)"
         else:
             raise AppException(code="ERR_VOC_001", message="Mã giảm giá không hợp lệ hoặc đã hết hạn", status_code=400)
 

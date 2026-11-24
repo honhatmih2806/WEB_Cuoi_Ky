@@ -1,6 +1,6 @@
 # 📋 BẢNG PHÂN CÔNG NHIỆM VỤ — THÀNH VIÊN 1
 
-> **Dự Án:** Hệ Thống Thương Mại Điện Tử TECH STORE JAPAN  
+> **Dự Án:** Hệ Thống Thương Mại Điện Tử UteTechStore  
 > **Người thực hiện:** Thành viên 1  
 > **Trách nhiệm:** Tinh chỉnh, chuẩn hóa toàn bộ dữ liệu hiển thị sản phẩm (Ít chữ, súc tích, đẳng cấp Luxury Minimalist Nhật Bản)  
 > **Thời hạn khuyến nghị:** 1 - 2 ngày  

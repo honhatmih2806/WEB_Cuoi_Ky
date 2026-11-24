@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-echo "🚀 [TECH STORE Local Dev] Khởi chạy Backend & Database..."
+echo "🚀 [UteTechStore Local Dev] Khởi chạy Backend & Database..."
 
 if [ ! -f .env ]; then
   cp .env.example .env 2>/dev/null || true
@@ -27,7 +27,7 @@ PYTHONPATH=apps/api $PYTHON_BIN scripts/seed_products.py 2>/dev/null || true
 
 echo ""
 echo "=========================================================================="
-echo "✅ Hệ thống Tech Store Backend đã sẵn sàng!"
+echo "✅ Hệ thống UteTechStore Backend đã sẵn sàng!"
 echo "👉 Swagger API: http://localhost:8000/docs"
 echo "👉 Để chạy Frontend Web Next.js trong terminal khác:"
 echo "   cd apps/web && npm run dev"

@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 >nul
-title TECH STORE — Japan Electronics Store Launcher
+title UteTechStore — Electronics Store Launcher
 color 0B
 
 echo ==============================================================================
-echo       TECH STORE (techstore.jp) - JAPAN PREMIUM ELECTRONICS STORE
+echo       UteTechStore (UTE TECH STORE) - PREMIUM ELECTRONICS STORE
 echo ==============================================================================
 echo.
 
@@ -30,18 +30,18 @@ if %errorlevel% neq 0 (
 
 echo.
 echo [1/2] Khoi dong Backend FastAPI (http://localhost:8000) ...
-start "TECH STORE — Backend API (FastAPI)" cmd /k "cd /d "%SCRIPT_DIR%apps\api" && set DISABLE_SQLALCHEMY_CEXT=1 && "%PY_CMD%" -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload"
+start "UteTechStore — Backend API (FastAPI)" cmd /k "cd /d "%SCRIPT_DIR%apps\api" && set DISABLE_SQLALCHEMY_CEXT=1 && "%PY_CMD%" -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload"
 
 timeout /t 3 /nobreak >nul
 
 echo [2/2] Khoi dong Frontend Next.js (http://localhost:3000) ...
-start "TECH STORE — Frontend Web (Next.js)" cmd /k "cd /d "%SCRIPT_DIR%apps\web" && npm run dev"
+start "UteTechStore — Frontend Web (Next.js)" cmd /k "cd /d "%SCRIPT_DIR%apps\web" && npm run dev"
 
 timeout /t 4 /nobreak >nul
 
 echo.
 echo ==============================================================================
-echo [THANH CONG] Toan bo he thong da duoc khoi chay!
+echo [THANH CONG] Toan bo he thong UteTechStore da duoc khoi chay!
 echo.
 echo  - Cua hang Truc Tuyen: http://localhost:3000
 echo  - Tai lieu API (Swagger): http://localhost:8000/docs

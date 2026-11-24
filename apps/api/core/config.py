@@ -14,7 +14,7 @@ else:
     _DB_FILE = (REPO_ROOT / "titan_silicon.db").as_posix()
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "TECH STORE — Siêu Thị Điện Tử Cao Cấp"
+    PROJECT_NAME: str = "UteTechStore — Siêu Thị Điện Tử & Công Nghệ Cao Cấp"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     
@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     
     # Security
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "titan-silicon-super-secret-key-2026")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "utetechstore-super-secret-key-2026")
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 

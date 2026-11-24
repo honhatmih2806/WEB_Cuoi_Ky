@@ -47,21 +47,21 @@ export const Footer: React.FC = () => {
         <div className="md:col-span-5 space-y-3">
           <div className="flex items-center gap-2">
             <span className="w-7 h-7 rounded bg-gray-950 text-white font-black text-xs flex items-center justify-center">
-              TS
+              UTE
             </span>
             <span className="text-sm font-bold text-gray-950 tracking-tight">
-              TECH STORE 合同会社 (JAPAN & VIETNAM)
+              UteTechStore (UTE TECH STORE VIETNAM)
             </span>
           </div>
 
           <p className="text-gray-500 leading-relaxed text-xs max-w-md">
-            Hệ sinh thái bán lẻ thiết bị điện tử và giải pháp điện toán công nghệ cao cấp. Chúng tôi tập trung vào trải nghiệm phần cứng đỉnh cao từ các thương hiệu công nghệ danh tiếng nhất thế giới.
+            Hệ sinh thái bán lẻ thiết bị điện tử và giải pháp công nghệ cao cấp. Chúng tôi tập trung vào trải nghiệm phần cứng đỉnh cao từ các thương hiệu công nghệ danh tiếng nhất thế giới.
           </p>
 
           <div className="space-y-1 text-[11px] text-gray-500 pt-1">
-            <p><strong>Mã số doanh nghiệp Nhật Bản:</strong> 9030003019539</p>
-            <p><strong>Giấy phép kinh doanh Việt Nam:</strong> 0109887766 do Sở KH&ĐT TP.HCM cấp</p>
-            <p><strong>Trụ sở chính:</strong> 3-13-11 Chuo, Moroyama-machi, Iruma-gun, Saitama 350-0461, Japan</p>
+            <p><strong>Giấy phép kinh doanh:</strong> 0109887766 do Sở KH&ĐT cấp</p>
+            <p><strong>Hotline kỹ thuật:</strong> 1800-8899 (Miễn phí 24/7)</p>
+            <p><strong>Email:</strong> support@utetechstore.com</p>
           </div>
         </div>
 
@@ -105,7 +105,7 @@ export const Footer: React.FC = () => {
               <a href="#return" className="hover:text-black transition">Chính sách bảo hành & Đổi trả 30 ngày</a>
             </li>
             <li>
-              <a href="#about" className="hover:text-black transition">Giới thiệu TECH STORE Flagship</a>
+              <a href="#about" className="hover:text-black transition">Giới thiệu UteTechStore Flagship</a>
             </li>
           </ul>
         </div>
@@ -115,7 +115,7 @@ export const Footer: React.FC = () => {
       <div className="border-t border-gray-200 py-6 px-4 bg-white text-[11px] text-gray-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
           <div>
-            © 2026 TECH STORE 合同会社 • Tất cả quyền được bảo lưu.
+            © 2026 UteTechStore • Tất cả quyền được bảo lưu.
           </div>
           <div className="flex items-center gap-3 text-gray-600 font-medium">
             <span>Phương thức thanh toán hỗ trợ:</span>
