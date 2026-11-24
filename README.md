@@ -8,7 +8,7 @@
 [![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20Postgres-indigo.svg)](https://sqlite.org/)
 [![Status](https://img.shields.io/badge/Status-Active%20Development-emerald.svg)]()
 
-> **UteTechStore** là nền tảng thương mại điện tử cao cấp chuyên phân phối các thiết bị điện tử, máy tính xách tay, điện thoại flagship, thiết bị âm thanh Hi-Fi, màn hình đồ họa chuyên nghiệp và linh kiện máy tính hàng đầu. Dự án được xây dựng với ngôn ngữ thiết kế tối giản, tươi sáng, sang trọng và thanh lịch, mang lại trải nghiệm mua sắm trực tuyến vượt trội.
+> **UteTechStore** là nền tảng thương mại điện tử chuyên nghiệp cung cấp đầy đủ các thiết bị điện tử, máy tính xách tay, điện thoại flagship, thiết bị âm thanh Hi-Fi, màn hình đồ họa và linh kiện máy tính cao cấp. Dự án được xây dựng với ngôn ngữ thiết kế tối giản, tươi sáng và sang trọng, mang lại trải nghiệm mua sắm trực tuyến vượt trội.
 
 ---
 
@@ -20,12 +20,19 @@
 
 ---
 
-## ⚡ Khởi Chạy 1-Click (Dành Cho Windows)
+## ⚡ Hướng Dẫn Khởi Chạy Nhanh (Quick Start)
 
-Chỉ cần nhấp đúp vào một trong hai tệp lệnh ngay tại thư mục gốc:
-👉 **`start.bat`** hoặc **`run_store.bat`**
+Hệ thống đã chuẩn bị sẵn các kịch bản khởi động tự động cho từng loại Terminal / Hệ điều hành:
 
-Hệ thống sẽ tự động kích hoạt đồng thời cả Backend FastAPI (`:8000`) và Frontend Next.js (`:3000`), sau đó tự động mở trình duyệt web.
+| Môi Trường / Terminal | Lệnh Thực Thi | Mô Tả |
+| :--- | :--- | :--- |
+| **Windows (1-Click UI)** | Nhấp đúp vào **`start.bat`** *(hoặc `run_store.bat`)* | Tự bật 2 cửa sổ Backend & Frontend, tự mở trình duyệt |
+| **Windows PowerShell** | `.\start.ps1` | Script chuyên dụng cho PowerShell, tự cấu hình môi trường |
+| **Mọi hệ điều hành (Python)** | `python scripts/start_servers.py` | Chạy đồng thời cả 2 server trên cùng 1 terminal |
+| **Git Bash / Linux / macOS** | `./start.sh` *(hoặc `bash start.sh`)* | Tự nhận diện môi trường Docker / Local Native |
+
+> [!NOTE]
+> **Lưu ý quan trọng cho Windows:** Nếu bạn đang mở cửa sổ **PowerShell** (`PS C:\...`), hãy chạy **`.\start.ps1`** hoặc **`.\start.bat`**. Không gõ `./start.sh` vì PowerShell không hỗ trợ thực thi trực tiếp tệp shell script của Linux.
 
 ---
 
@@ -64,53 +71,81 @@ Dự án đã soạn thảo chi tiết 2 tệp nhiệm vụ kỹ thuật tại t
 
 ---
 
-## 📁 Cấu Trúc Mã Nguồn
+## 🛠️ Hướng Dẫn Cài Đặt Chi Tiết Cho Thành Viên Mới
 
-```
-.
-├── apps/
-│   ├── api/                  # Backend FastAPI (Python 3.12)
-│   │   ├── core/             # Cấu hình hệ thống, kết nối Database, Security, Exceptions
-│   │   ├── models/           # SQLAlchemy Entities (Product, Brand, Category, Order, Specs)
-│   │   ├── routers/          # API Controllers (products, categories, orders, advisor)
-│   │   ├── schemas/          # Pydantic DTOs cho Request/Response
-│   │   └── main.py           # Điểm khởi chạy FastAPI app
-│   └── web/                  # Frontend Next.js 14 (App Router, Tailwind CSS)
-│       ├── src/
-│       │   ├── app/          # App Router, globals.css, layout.tsx, page.tsx
-│       │   ├── components/   # Navbar, HeroBanner, ProductCard, DetailModal, Cart, Checkout...
-│       │   ├── services/     # API Client & Fallback Data Module
-│       │   └── types/        # TypeScript DTOs
-├── scripts/
-│   ├── seed_products.py      # Script nạp dữ liệu sản phẩm vào CSDL SQLite
-│   └── start_servers.py      # Script chạy nền đồng thời cả Backend và Frontend
-├── start.bat                 # File khởi chạy 1-click cho Windows
-├── run_store.bat             # File khởi chạy nhanh cho Windows
-├── start.sh                  # Kịch bản khởi chạy cho Linux / macOS / Git Bash
-├── dev.sh                    # Kịch bản phát triển cho Backend
-├── titan_silicon.db          # Cơ sở dữ liệu SQLite đã được nạp dữ liệu đầy đủ
-├── NHIEM_VU_THANH_VIEN_1_DATA_SAN_PHAM.md
-├── NHIEM_VU_THANH_VIEN_2_DINH_GIA_VA_TIM_KIEM.md
-└── README.md
-```
-
----
-
-## 🛠️ Hướng Dẫn Cài Đặt Cho Thành Viên Mới
-
-### 1. Clone Kho Mã Nguồn:
+### Bước 1: Kéo Kho Mã Nguồn Về Máy (Clone Repo)
 ```bash
 git clone https://github.com/honhatmih2806/WEB_Cuoi_Ky.git
 cd WEB_Cuoi_Ky
 ```
 
-### 2. Khởi Chạy Nhanh:
-- **Trên Windows:** Nhấp đúp vào `start.bat`.
-- **Trên Linux / macOS / Git Bash:**
+### Bước 2: Khởi Chạy Tự Động (Chọn 1 trong các cách sau)
+- **Nếu dùng Windows (Khuyên dùng):**
+  - Mở PowerShell và gõ:
+    ```powershell
+    .\start.ps1
+    ```
+  - Hoặc nhấp đúp vào file `start.bat`.
+- **Nếu dùng Git Bash / Linux / macOS:**
   ```bash
   chmod +x start.sh dev.sh
   ./start.sh
   ```
+
+---
+
+### Bước 3: Khởi Chạy Thủ Công Từng Phần (Dành Khi Lập Trình & Debug)
+
+#### 🔹 1. Khởi động Backend (FastAPI):
+Mở một cửa sổ terminal tại thư mục dự án:
+```powershell
+# Tạo và kích hoạt môi trường ảo Python
+python -m venv .venv
+
+# Kích hoạt trên Windows:
+.\.venv\Scripts\activate
+# (Hoặc trên Mac/Linux: source .venv/bin/activate)
+
+# Cài đặt thư viện
+pip install fastapi uvicorn sqlalchemy pydantic pydantic-settings python-multipart email-validator passlib python-jose httpx requests scikit-learn numpy
+
+# Khởi chạy server API
+cd apps/api
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
+> API Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+#### 🔹 2. Khởi động Frontend (Next.js 14):
+Mở một cửa sổ terminal thứ hai:
+```powershell
+cd apps/web
+
+# Cài đặt node_modules
+npm install
+
+# Khởi chạy frontend
+npm run dev
+```
+> Web Store: [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🔀 Quy Trình Phối Hợp Làm Việc Trên Git (Team Git Workflow)
+
+1. **Tạo nhánh làm việc riêng (Không sửa trực tiếp trên `main`):**
+   ```bash
+   git checkout -b feature/<ten-tinh-nang>
+   # Ví dụ TV1: git checkout -b feature/refine-product-data
+   # Ví dụ TV2: git checkout -b feature/pricing-and-search
+   ```
+2. **Thực hiện code và kiểm thử chạy mượt mà trên máy local.**
+3. **Commit và đẩy nhánh lên GitHub:**
+   ```bash
+   git add .
+   git commit -m "feat: mô tả công việc đã làm"
+   git push origin feature/<ten-tinh-nang>
+   ```
+4. **Tạo Pull Request (PR) trên GitHub** để nhóm trưởng duyệt và gộp vào nhánh chính `main`.
 
 ---
 © 2026 UteTechStore • Nền tảng thương mại điện tử công nghệ cao cấp.
