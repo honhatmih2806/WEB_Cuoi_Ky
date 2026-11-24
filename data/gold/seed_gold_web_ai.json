@@ -1,0 +1,78 @@
+[
+  {
+    "skill": "fastapi_rest",
+    "phase_level": 1,
+    "type": "knowledge",
+    "question": "Trong FastAPI, mã trạng thái HTTP nào là chuẩn nhất để trả về khi một tài nguyên mới được tạo thành công?",
+    "choices": ["200 OK", "201 Created", "202 Accepted", "204 No Content"],
+    "reference_answer": "201 Created",
+    "explanation": "HTTP 201 Created là mã chuẩn chỉ định một hoặc nhiều tài nguyên mới vừa được khởi tạo thành công trên server.",
+    "difficulty": "EASY",
+    "tags": ["fastapi", "http", "rest_api"],
+    "source": "prepmaster",
+    "license": "MIT",
+    "language": "vi"
+  },
+  {
+    "skill": "pgvector_sql",
+    "phase_level": 1,
+    "type": "knowledge",
+    "question": "Loại chỉ số (Index) nào được khuyến nghị trong pgvector để đạt tốc độ tìm kiếm tương đồng cao cho tập dữ liệu lớn?",
+    "choices": ["B-Tree", "GIN", "HNSW (Hierarchical Navigable Small World)", "BRIN"],
+    "reference_answer": "HNSW (Hierarchical Navigable Small World)",
+    "explanation": "HNSW cung cấp khả năng tìm kiếm xấp xỉ gần nhất (ANN) với recall cao và độ trễ thấp hơn nhiều so với IVFFlat.",
+    "difficulty": "MEDIUM",
+    "tags": ["postgresql", "pgvector", "database"],
+    "source": "prepmaster",
+    "license": "MIT",
+    "language": "vi"
+  },
+  {
+    "skill": "python_logic",
+    "phase_level": 1,
+    "type": "code_comprehension",
+    "question": "Đoạn code sau sẽ in ra giá trị gì trên màn hình?\n\n```python\na = [1, 2, 3]\nb = a\nb.append(4)\nprint(len(a))\n```",
+    "choices": ["3", "4", "Báo lỗi", "None"],
+    "reference_answer": "4",
+    "explanation": "Trong Python, phép gán list `b = a` tạo một tham chiếu đến cùng một đối tượng danh sách trong bộ nhớ, do đó khi append vào b thì len(a) cũng thành 4.",
+    "difficulty": "EASY",
+    "tags": ["python", "code_reasoning"],
+    "source": "imbue_code_comprehension",
+    "license": "MIT",
+    "language": "vi"
+  },
+  {
+    "skill": "concurrency_lock",
+    "phase_level": 1,
+    "type": "code_comprehension",
+    "question": "Cho đoạn code sau:\n\n```python\ncounter = 0\ndef increment():\n    global counter\n    counter += 1\n```\nNếu 100 coroutines cùng chạy gọi `increment()`, vấn đề tiềm ẩn nào có thể xảy ra trong môi trường đa luồng?",
+    "choices": ["Deadlock", "Race Condition (Tranh chấp tài nguyên)", "Stack Overflow", "Không có lỗi gì"],
+    "reference_answer": "Race Condition (Tranh chấp tài nguyên)",
+    "explanation": "Thao tác cộng dồn `counter += 1` không phải là nguyên tử (atomic); trong môi trường đa luồng có thể dẫn đến việc đọc và ghi đè giá trị cũ.",
+    "difficulty": "MEDIUM",
+    "tags": ["concurrency", "python"],
+    "source": "imbue_code_comprehension",
+    "license": "MIT",
+    "language": "vi"
+  },
+  {
+    "skill": "system_design",
+    "phase_level": 1,
+    "type": "defense",
+    "question": "Tại sao trong kiến trúc đồ án của bạn lại dùng Redis kết hợp với PostgreSQL pgvector thay vì chỉ dùng một mình PostgreSQL?",
+    "choices": null,
+    "reference_answer": "PostgreSQL + pgvector đóng vai trò nguồn sự thật lâu dài (System of Record) và lưu trữ vector ngữ nghĩa. Redis đóng vai trò Cache tốc độ cao và cung cấp Distributed Lock (chống race-condition khi nhiều user cùng book phòng/bàn đồng thời) cũng như lưu Session/Rate-limit trong RAM để giảm tải cho DB.",
+    "rubric": {
+      "technical_correctness": 30,
+      "design_justification": 30,
+      "tradeoff_awareness": 20,
+      "failure_handling": 20
+    },
+    "explanation": "Sinh viên cần chỉ rõ sự khác biệt giữa lưu trữ bền vững (Durable storage) và bộ nhớ tạm (In-memory caching).",
+    "difficulty": "HARD",
+    "tags": ["architecture", "redis", "postgres", "defense"],
+    "source": "thinkbuild_gold_curated",
+    "license": "MIT",
+    "language": "vi"
+  }
+]

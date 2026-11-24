@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+.venv/
+env/
+venv/
+ENV/
+
+# Production Build
+.next/
+out/
+build/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyd.disabled
+.pytest_cache/
+
+# Large Datasets and Archives (>50MB, prevents GitHub 100MB limit block)
+data/raw/
+data/processed/
+_backup_fnb/
+*.zip
+*.tar.gz
+
+# Environment & Secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS Files
+.DS_Store
+Thumbs.db
+Desktop.ini
