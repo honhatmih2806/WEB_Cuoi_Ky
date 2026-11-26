@@ -1,140 +1,150 @@
-# ☁️ Kiến trúc Đám mây AWS & Hạ tầng Triển khai — UteTechStore
+# ☁️ Kiến trúc Đám mây AWS Toàn diện — UteTechStore & Hệ thống Thumbnail/Watermark
 
 > **Vị trí tài liệu:** `docs/CLOUD_ARCHITECTURE_AWS.md`  
-> **Phạm vi áp dụng:** Toàn bộ đồ án Web **UteTechStore** (`Next.js 14` + `FastAPI` + `PostgreSQL` + `S3/Lambda Thumbnail & Watermark`)  
-> **Phụ trách triển khai:** Cloud Team (**Ngọc Huy** & **Trọng Sơn**) phối hợp cùng Web Team (**Huỳnh Hương** & **Đăng Khoa**)
+> **Trạng thái:** Đã chuẩn hóa & thống nhất kiến trúc cho **UteTechStore** (`Next.js 14` + `FastAPI` + `PostgreSQL` + `S3/SQS/Lambda Thumbnail & Watermark`)  
+> **Region chính:** `ap-southeast-1` (Singapore) — Triển khai trên **2 Availability Zones (`ap-southeast-1a`, `ap-southeast-1b`)**
 
 ---
 
-## 1. Tổng quan Kiến trúc Cloud (AWS Academy Modules 1, 3, 9)
+## 1. Thống nhất Các Quyết định Kiến trúc (Architecture Decisions)
 
-Hệ thống **UteTechStore** được thiết kế theo kiến trúc **Cloud-Native tách lớp (Decoupled + Event-Driven)**, tuân thủ **5 trụ cột AWS Well-Architected Framework** (Operational Excellence, Security, Reliability, Performance Efficiency, Cost Optimization).
+Để đảm bảo sự đồng nhất tuyệt đối giữa báo cáo thiết kế và mã nguồn thực tế, toàn bộ hệ thống chốt **4 quyết định kiến trúc** sau:
 
-- **Region triển khai chính:** `ap-southeast-1` (Singapore) — tối ưu độ trễ cho người dùng tại Việt Nam.
-- **Tính sẵn sàng cao (High Availability):** Triển khai trên **2 Availability Zones (AZ-a & AZ-b)** cho tầng Web/API, Load Balancer và Database.
+1. **Thống nhất Cơ chế Hàng đợi & Xử lý Bất đồng bộ:**
+   - **Lựa chọn:** `Amazon S3 (raw/)` $\rightarrow$ `S3 Event Notification` $\rightarrow$ **`Amazon SQS` (kèm Dead Letter Queue - DLQ)** $\rightarrow$ `AWS Lambda` *(hoặc `ECS Fargate Worker` nếu file PDF quá lớn)*.
+   - **Lý do:** Mô hình `S3 → SQS → Worker` tách rời hoàn toàn lưu trữ và xử lý, hỗ trợ **Retry tự động**, chống mất sự kiện qua **DLQ**, kiểm soát được tốc độ xử lý đồng thời (Concurrency) và dễ dàng đạt tính **Idempotency** (chống xử lý trùng).
+2. **Thống nhất Cơ sở dữ liệu (Local ↔ AWS):**
+   - **Lựa chọn:** **SQLite (`titan_silicon.db`)** ở Local Dev và **Amazon RDS PostgreSQL 16** trên Docker / AWS Cloud (dùng chung tầng `SQLAlchemy` trong `apps/api/models/entities.py`).
+   - **Lý do:** Không dùng DynamoDB để tránh phân mảnh giữa SQL và NoSQL; giữ nguyên 1 schema quan hệ (`products`, `categories`, `orders`, `documents`) và chuyển đổi chỉ bằng 1 biến `DATABASE_URL`.
+3. **Thống nhất Cổng API & Bảo vệ truy cập (API Exposure):**
+   - **Lựa chọn:** `Route 53 (DNS)` $\rightarrow$ `Amazon CloudFront (HTTPS/ACM + AWS WAF)` $\rightarrow$ `Application Load Balancer (ALB)` $\rightarrow$ `Next.js (:3000)` & `FastAPI (:8000)`.
+   - **Lý do:** Không dùng API Gateway gọi thẳng Lambda cho các nghiệp vụ Web. Mọi API đều đi qua **FastAPI** để dùng chung xác thực, `ApiResponse`, `MetaPagination` và sinh **S3 Presigned URL** cho client upload trực tiếp lên S3.
+4. **Giải pháp cho Rủi ro PDF Lớn (> 200 trang hoặc > 100MB):**
+   - Với bộ 10 slide hiện tại (32–89 trang/file, tổng 586 trang), **AWS Lambda** (timeout `15 phút`, RAM `2048 MB`, `/tmp` `2048 MB`) xử lý mỗi file chỉ mất ~5–15 giây.
+   - **Phương án Hybrid dự phòng:** Nếu kích thước PDF > `50MB` hoặc > `200 trang`, FastAPI đẩy job sang **SQS Large-Job Queue** để **ECS Fargate Worker** (không giới hạn 15 phút) xử lý.
+
+---
+
+## 2. Sơ đồ Kiến trúc Tổng thể (Cloud-Native Unified Architecture)
 
 ```mermaid
 flowchart LR
-    U["Người dùng / Trình duyệt"] -->|"HTTPS (443)"| CF["Amazon CloudFront CDN"]
-    CF -->|"Dynamic API & SSR"| ALB["Application Load Balancer"]
-    CF -->|"Ảnh SP & PDF Watermark"| S3["Amazon S3 (utetechstore-assets)"]
-    ALB -->|"Auto Scaling Group"| EC2["EC2 / Docker (Next.js + FastAPI)"]
-    EC2 -->|"SQLAlchemy DATABASE_URL"| RDS["Amazon RDS PostgreSQL (Multi-AZ)"]
-    EC2 -->|"Cache & Session"| REDIS["Amazon ElastiCache (Redis)"]
-    EC2 -->|"Upload raw/ (boto3)"| S3
-    S3 -->|"S3 Event (ObjectCreated)"| LAMBDA["AWS Lambda (Thumbnail & Watermark)"]
-    LAMBDA -->|"Ghi processed/"| S3
-    EC2 -.->|"JSON Logs & Metrics"| CW["Amazon CloudWatch + SNS"]
-    LAMBDA -.->|"Execution Logs"| CW
+    User["Người dùng"] -->|"DNS + HTTPS (ACM)"| R53["Route 53 + CloudFront + WAF"]
+    R53 -->|"Static & Media"| S3["Amazon S3 (utetechstore-assets)"]
+    R53 -->|"Web & API Traffic"| ALB["Application Load Balancer (2 AZs)"]
+    ALB -->|"Private Subnet"| EC2["EC2 / ECS ASG: Next.js + FastAPI"]
+    EC2 -->|"Secrets"| SM["Secrets Manager & SSM"]
+    EC2 -->|"SQLAlchemy"| RDS["Amazon RDS PostgreSQL (Multi-AZ)"]
+    EC2 -->|"Cache / Rate Limit"| REDIS["ElastiCache Redis"]
+    EC2 -->|"Presigned URL / Upload raw/"| S3
+    S3 -->|"ObjectCreated Event"| SQS["Amazon SQS + DLQ"]
+    SQS -->|"Trigger / Poll"| WORKER["Lambda (<200p) / Fargate Worker (>200p)"]
+    WORKER -->|"Lưu processed/"| S3
+    WORKER -->|"Cập nhật status"| RDS
+    EC2 -.->|"JSON Logs & Metrics"| CW["CloudWatch Logs, Metrics & Alarms"]
+    WORKER -.->|"Logs & DLQ Metric"| CW
+    CW -->|"Alert"| SNS["Amazon SNS (Email/Slack)"]
 ```
 
 ---
 
-## 2. Thiết kế Mạng VPC & Phân phối Nội dung (Module 5)
+## 3. Mức A — Thiết kế Hạ tầng Cốt lõi & Bảo mật Bắt buộc
 
-### 2.1. Cấu trúc VPC (`10.0.0.0/16`)
-| Thành phần | Subnet CIDR | Availability Zone | Thành phần đặt bên trong |
+### 3.1. VPC, Subnets, Route Tables & Gateways (`10.0.0.0/16`)
+
+| Thành phần | CIDR / Phạm vi | AZ | Route Table chính |
 | :--- | :--- | :--- | :--- |
-| **Public Subnet 1** | `10.0.1.0/24` | `ap-southeast-1a` | Application Load Balancer (ALB), NAT Gateway |
-| **Public Subnet 2** | `10.0.2.0/24` | `ap-southeast-1b` | Application Load Balancer (ALB) dự phòng |
-| **Private App Subnet 1** | `10.0.11.0/24` | `ap-southeast-1a` | EC2 / Docker (`utetechstore-web`, `utetechstore-api`) |
-| **Private App Subnet 2** | `10.0.12.0/24` | `ap-southeast-1b` | EC2 / Docker (Auto Scaling Instance) |
-| **Private DB Subnet 1 & 2** | `10.0.21.0/24`, `10.0.22.0/24` | `ap-southeast-1a`, `1b` | Amazon RDS PostgreSQL, ElastiCache Redis |
+| **Public Subnet 1 & 2** | `10.0.1.0/24`, `10.0.2.0/24` | `1a`, `1b` | `0.0.0.0/0` $\rightarrow$ **Internet Gateway (IGW)** (chứa ALB, NAT Gateway) |
+| **Private App Subnet 1 & 2** | `10.0.11.0/24`, `10.0.12.0/24` | `1a`, `1b` | `0.0.0.0/0` $\rightarrow$ **NAT Gateway**; S3 $\rightarrow$ **S3 Gateway Endpoint** |
+| **Private DB Subnet 1 & 2** | `10.0.21.0/24`, `10.0.22.0/24` | `1a`, `1b` | Chỉ nội bộ `10.0.0.0/16` (Local), không có đường ra Internet |
+| **VPC Endpoints** | Gateway & Interface | VPC | **S3 Gateway Endpoint** (miễn phí, lưu lượng S3 không đi qua NAT), **Secrets Manager / CloudWatch Interface Endpoint** |
 
-### 2.2. Amazon CloudFront (CDN)
-- Cache toàn bộ file tĩnh của Next.js (`_next/static/*`) và tài nguyên media từ S3 Bucket `utetechstore-assets/processed/*`.
-- Giúp giảm tải trực tiếp cho EC2 và rút ngắn thời gian tải ảnh sản phẩm / Thumbnail 16:9.
+### 3.2. Security Groups (Inbound & Outbound Rules)
 
----
+| Security Group | Inbound (Cổng & Nguồn) | Outbound (Cổng & Đích) |
+| :--- | :--- | :--- |
+| **ALB-SG** | `443 (HTTPS)` từ `0.0.0.0/0` (hoặc CloudFront Prefix List); `80` redirect `443` | `3000`, `8000` $\rightarrow$ `App-SG` |
+| **App-SG** (EC2/ECS) | `3000 (Next.js)`, `8000 (FastAPI)` từ `ALB-SG` | `5432` $\rightarrow$ `DB-SG`; `6379` $\rightarrow$ `DB-SG`; `443` $\rightarrow$ `0.0.0.0/0` (S3/Secrets) |
+| **Worker-SG** (Lambda/Fargate) | Không mở Inbound | `5432` $\rightarrow$ `DB-SG`; `443` $\rightarrow$ `0.0.0.0/0` (S3/SQS/Logs) |
+| **DB-SG** (RDS & Redis) | `5432 (PostgreSQL)`, `6379 (Redis)` từ `App-SG` và `Worker-SG` | Không mở Outbound ra ngoài |
 
-## 3. Bảo mật Đám mây — IAM & Security Groups (Module 4)
+### 3.3. IAM Roles (Least Privilege — Không Hardcode Key)
+1. **IAM Role cho FastAPI Backend (`UteTechStore-Api-Role`):**
+   - `s3:PutObject` chỉ trên `arn:aws:s3:::utetechstore-assets/raw/*`.
+   - `s3:GetObject` trên `arn:aws:s3:::utetechstore-assets/processed/*`.
+   - `secretsmanager:GetSecretValue` chỉ trên ARN secret của `utetechstore/prod/*`.
+   - `logs:CreateLogStream`, `logs:PutLogEvents` trên Log Group `/utetechstore/api`.
+2. **IAM Role cho Lambda / Worker (`UteTechStore-Worker-Role`):**
+   - `sqs:ReceiveMessage`, `sqs:DeleteMessage`, `sqs:GetQueueAttributes` trên `utetechstore-pdf-queue`.
+   - `s3:GetObject` chỉ trên `raw/*` và `assets/*`.
+   - `s3:PutObject` chỉ trên `processed/*`.
+   - `ec2:CreateNetworkInterface` (AWSLambdaVPCAccessExecutionRole) để kết nối RDS trong Private Subnet.
 
-### 3.1. Nguyên tắc IAM Least Privilege (Không dùng Access Key cứng)
-- Gắn **IAM Instance Profile Role** trực tiếp cho EC2 (FastAPI Backend) và **IAM Execution Role** cho AWS Lambda.
-- Quyền tối thiểu chỉ cho phép thao tác trên đúng bucket `utetechstore-assets`:
+### 3.4. Bảo mật & Vòng đời Amazon S3 (`utetechstore-assets`)
+- **Block Public Access:** Bật **ON toàn bộ 4 tùy chọn** (không bao giờ mở public bucket).
+- **Bucket Policy:** Chỉ cho phép **CloudFront Origin Access Control (OAC)** đọc `processed/*` và các IAM Role nội bộ thao tác theo prefix; từ chối mọi kết nối không dùng HTTPS (`aws:SecureTransport == false`).
+- **Encryption & Versioning:** Bật mã hóa mặc định **SSE-S3 (AES-256)** (hoặc SSE-KMS) và bật **Versioning** để khôi phục khi ghi đè nhầm.
+- **Lifecycle Policy:**
+  - Chuyển `raw/*` sang **S3 Standard-IA** sau 30 ngày, sang **Glacier Instant Retrieval** sau 90 ngày.
+  - Tự động xóa **Incomplete Multipart Uploads** sau 7 ngày để tránh lãng phí dung lượng.
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject", "s3:ListBucket"],
-      "Resource": [
-        "arn:aws:s3:::utetechstore-assets",
-        "arn:aws:s3:::utetechstore-assets/*"
-      ]
-    }
-  ]
-}
-```
+### 3.5. Hàng đợi Amazon SQS & Dead Letter Queue (DLQ)
+- **Main Queue:** `utetechstore-pdf-queue` (Standard Queue), `VisibilityTimeout = 900 giây` (bằng max timeout Lambda), `MessageRetentionPeriod = 4 ngày`.
+- **Dead Letter Queue (DLQ):** `utetechstore-pdf-dlq` với `maxReceiveCount = 3` (nếu xử lý lỗi 3 lần do PDF hỏng/mã hóa mật khẩu, message tự chuyển sang DLQ để không lặp vô hạn và kích hoạt CloudWatch Alarm).
 
-### 3.2. Ma trận Security Groups (Stateful Firewall)
-| Security Group | Inbound (Cho phép vào) | Nguồn (Source) | Mục đích |
-| :--- | :--- | :--- | :--- |
-| **ALB-SG** | `80 (HTTP)`, `443 (HTTPS)` | `0.0.0.0/0` | Tiếp nhận traffic từ người dùng / CloudFront |
-| **App-SG** | `3000 (Next.js)`, `8000 (FastAPI)` | `ALB-SG` | Chỉ nhận request đi qua Load Balancer |
-| **DB-SG** | `5432 (PostgreSQL)`, `6379 (Redis)` | `App-SG` | Cô lập hoàn toàn Database khỏi Internet |
+### 3.6. Thiết kế Database (`PostgreSQL RDS` / `SQLite`) & Quản lý Trạng thái
+- Thống nhất bảng `documents` trong `apps/api/models/entities.py` (`SlideDocument`):
+  - **PK:** `doc_id` (`VARCHAR(64)`).
+  - **Indexes:** `idx_documents_status (status)`, `idx_documents_created_at (created_at DESC)`, `idx_documents_etag (s3_etag)`.
+  - **Cập nhật trạng thái an toàn (Atomic Transition):** Worker cập nhật `UPDATE documents SET status = 'PROCESSING' WHERE doc_id = :id AND status IN ('PENDING', 'FAILED')` trước khi chạy, tránh 2 worker xử lý song song cùng 1 file.
 
----
-
-## 4. Điện toán & Xử lý Phi máy chủ (Module 6)
-
-### 4.1. Tầng Ứng dụng (EC2 + Docker Compose)
-- Sử dụng `docker-compose.yml` để chạy đồng nhất giữa Local và EC2 gồm các container: `utetechstore-web` (`:3000`), `utetechstore-api` (`:8000`), `utetechstore-postgres` (`:5432`), `utetechstore-redis` (`:6379`) và `utetechstore-localstack` (`:4566` khi chạy Local).
-
-### 4.2. Tầng Serverless Event-Driven (`cloud/lambda_watermark/handler.py`)
-- **Cơ chế kích hoạt:** S3 Event Notification (`s3:ObjectCreated:*`) trên prefix `raw/`.
-- **Nhiệm vụ xử lý tự động:**
-  1. Đọc file ảnh sản phẩm hoặc PDF tài liệu/catalogue từ `raw/`.
-  2. Dùng `PyMuPDF` (`fitz`) + `Pillow` render trang bìa (hỗ trợ chọn trang 1 hoặc trang 2 đối với file đặc biệt) thành 3 kích thước Thumbnail chuẩn 16:9 (`320×180`, `640×360`, `1280×720`).
-  3. Đóng dấu **Watermark `UteTechStore`** lên ảnh Thumbnail và toàn bộ trang PDF (giữ nguyên text tìm kiếm được — searchable text).
-  4. Lưu kết quả vào `processed/thumbnails/` và `processed/watermarked_pdfs/` (tuyệt đối không ghi đè file gốc ở `raw/`).
+### 3.7. API Exposure, Xác thực & Secrets Management
+- **Endpoints chuẩn hóa (`/api/v1/documents`):**
+  - `POST /api/v1/documents/presigned-upload` (cấp Presigned URL upload thẳng S3 `raw/`, giới hạn kích thước `<= 50MB`, `Content-Type: application/pdf` hoặc ảnh).
+  - `GET /api/v1/documents` (tìm kiếm + phân trang `MetaPagination`), `GET /api/v1/documents/{doc_id}`, `POST /api/v1/documents/{doc_id}/reprocess`.
+- **Authentication & Authorization:** Dùng JWT (`JWT_SECRET` trong `apps/api/core/config.py`) phân biệt quyền `USER` (xem/tải tài liệu) và `ADMIN` (upload, cấu hình watermark, reprocess).
+- **CORS & Rate Limiting:** Khóa `allow_origins` về domain CloudFront chính thức (thay cho `*` ở Production); giới hạn tần suất qua **AWS WAF** + **Redis**.
+- **Secrets Management:** Lưu `DATABASE_URL`, `JWT_SECRET`, thông tin RDS trong **AWS Secrets Manager** (bật Auto-rotation); lưu cấu hình không nhạy cảm (`AWS_S3_BUCKET`, `CLOUDFRONT_DOMAIN`, `SQS_QUEUE_URL`) trong **SSM Parameter Store**.
 
 ---
 
-## 5. Lưu trữ & Cơ sở dữ liệu (Module 7 & 8)
+## 4. Mức B — Độ tin cậy, Mở rộng & Khả năng Vận hành
 
-| Thành phần | Giải pháp Local / Dev | Giải pháp AWS Cloud | Điểm kết nối trong Code |
-| :--- | :--- | :--- | :--- |
-| **Object Storage** | LocalStack S3 (`:4566`) | Amazon S3 (`utetechstore-assets`) | `apps/api/services/s3_service.py` (`boto3`) |
-| **Relational DB** | SQLite (`titan_silicon.db`) / Docker Postgres | Amazon RDS PostgreSQL 16 (Multi-AZ) | Biến `DATABASE_URL` trong `.env` & `apps/api/core/config.py` |
-| **In-Memory Cache** | Docker Redis (`:6379`) | Amazon ElastiCache for Redis | Biến `REDIS_URL` trong `.env` |
-
----
-
-## 6. Cân bằng tải, Auto Scaling & Giám sát (Module 10)
-
-1. **Application Load Balancer (ALB):**
-   - Định tuyến `/` $\rightarrow$ Target Group `Next.js (:3000)` và `/api/*` $\rightarrow$ Target Group `FastAPI (:8000)`.
-   - Health check định kỳ gọi `GET /health` trên FastAPI (kiểm tra cả kết nối Database lẫn S3).
-2. **Auto Scaling Group (ASG):**
-   - Min: `1` instance | Desired: `2` instances | Max: `4` instances.
-   - Target Tracking Policy: Tự động tăng instance khi CPU trung bình > `70%`.
-3. **Amazon CloudWatch + SNS:**
-   - Thu thập **Structured JSON Logs** từ `apps/api/main.py` và log thực thi của AWS Lambda.
-   - Thiết lập **CloudWatch Alarm**: gửi cảnh báo email qua **Amazon SNS** khi tỷ lệ lỗi HTTP `5xx` > `5` trong 5 phút hoặc CPU RDS > `80%`.
+| Thành phần | Phương án triển khai cụ thể |
+| :--- | :--- |
+| **High Availability (Multi-AZ)** | ALB chạy trên 2 AZ; EC2/ECS Auto Scaling trải đều 2 AZ; **RDS PostgreSQL Multi-AZ** tự động failover sang Standby trong `< 60 giây`; Redis Replication Group; S3 lưu trữ phân tán $\ge$ 3 AZs (độ bền `11 số 9`). |
+| **Auto Scaling** | **Tầng Web/API:** EC2/ECS ASG scale `1 -> 4` instances khi CPU > `70%`. **Tầng Worker:** Lambda tự co giãn concurrency (đặt **Reserved Concurrency = 20** để không làm quá tải DB RDS); ECS Fargate Worker scale theo metric `ApproximateNumberOfMessagesVisible` của SQS. |
+| **Monitoring & Alerting** | FastAPI xuất **Structured JSON Logs** (`timestamp`, `level`, `request_id`, `path`, `latency_ms`) về **CloudWatch Logs**. Tạo Dashboard theo dõi Latency, Error Rate, SQS Queue Depth. Cấu hình **CloudWatch Alarm** bắn cảnh báo qua **Amazon SNS (Email)** khi: `DLQ Messages > 0`, `HTTP 5xx > 5 trong 5 phút`, hoặc `RDS CPU > 80%`. |
+| **Retry & Idempotency** | Kết hợp `(doc_id, s3_etag)` làm **Idempotency Key**. Khi Lambda/Worker nhận message từ SQS, kiểm tra nếu `status == 'COMPLETED'` và `s3_etag` trùng khớp thì bỏ qua ngay (`ack` SQS), đảm bảo S3 gửi lại event cũng không tạo trùng bản ghi hay ghi đè sai. |
+| **Backup, Recovery & DR** | • **Database:** Bật RDS Automated Backups (lưu 7 ngày) + Point-in-Time Recovery (PITR).<br>• **S3:** Bật S3 Versioning để phục hồi file tức thì.<br>• **Mục tiêu khôi phục:** **RTO $\le$ 15 phút** (khởi tạo lại EC2/ECS từ Docker Image + Terraform), **RPO $\le$ 5 phút** (dựa trên RDS PITR Transaction Logs & S3 Versioning). |
+| **Performance & Benchmark** | Kiểm thử tải đồng thời 10 file (586 trang) qua SQS: giới hạn bộ nhớ Lambda `2048 MB`, xóa file tạm trong `/tmp` ngay sau mỗi job (`finally` block) để tái sử dụng container ấm (warm start) không bị đầy `/tmp`. |
 
 ---
 
-## 7. Dự toán Chi phí Vận hành (Module 2 — AWS Economics)
+## 5. Mức C — Triển khai Tự động, Bảo vệ & Dự toán Chi phí
 
-Ước tính cho môi trường **Demo / Đồ án (AWS Free Tier & Learner Lab)** trong 1 tháng:
+### 5.1. Infrastructure as Code (IaC) & Quy trình Môi trường
+- **IaC (`infra/terraform/` hoặc `template.yaml` AWS SAM):** Khai báo toàn bộ VPC, Subnets, Security Groups, IAM Roles, S3, SQS+DLQ, RDS, Lambda bằng code để dựng/xóa hạ tầng đồng nhất qua 3 môi trường:
+  - **Dev:** Chạy trên máy cá nhân với `docker-compose.yml` (`postgres`, `redis`, `localstack`, `api`, `web`).
+  - **Staging:** AWS Single-AZ (`t3.micro`, `db.t3.micro`) để kiểm thử tích hợp thực tế trước khi phát hành.
+  - **Production:** AWS Multi-AZ bật đầy đủ WAF, CloudFront, Auto Scaling và CloudWatch Alarms.
 
-| Dịch vụ AWS | Cấu hình dự kiến | Chi phí ước tính / tháng |
-| :--- | :--- | :---: |
-| **Amazon EC2** | `t3.small` / `t2.micro` (Free Tier 750h/tháng) | `\$0 – \$15` |
-| **Amazon RDS (PostgreSQL)** | `db.t3.micro` (20GB gp3, Free Tier 750h/tháng) | `\$0 – \$13` |
-| **Amazon S3 + CloudFront** | 5GB lưu trữ, 10.000 requests, 10GB băng thông | `\$0 – \$1` |
-| **AWS Lambda** | 10.000 lần xử lý Thumbnail/Watermark (Free Tier 1M req) | `\$0` |
-| **CloudWatch & SNS** | Basic metrics + log < 5GB | `\$0` |
-| **Tổng cộng (tối ưu Free Tier)** | **Phù hợp sinh viên & chạy đồ án thực tế** | **~\$0 – \$29 / tháng** |
+### 5.2. CI/CD Pipeline (`.github/workflows/ci-cd.yml`)
+1. **Trigger:** Push / Merge PR vào `main`.
+2. **Test & Build:** Chạy `pytest` (FastAPI), `npm run build` (Next.js), kiểm tra định dạng Lambda.
+3. **Package & Push:** Build Docker Image cho `api` và `web`, đẩy lên **Amazon ECR**; đóng gói Lambda zip/layer.
+4. **Deploy:** Cập nhật ECS/EC2 Service & AWS Lambda Function, chạy smoke test `GET /health`.
 
----
+### 5.3. Domain, HTTPS & Bảo vệ WAF
+- **DNS & SSL:** Quản lý tên miền trên **Amazon Route 53**, cấp chứng chỉ TLS 1.3 miễn phí từ **AWS Certificate Manager (ACM)** gắn lên CloudFront & ALB.
+- **AWS WAF:** Gắn Web ACL lên CloudFront với:
+  - `AWSManagedRulesCommonRuleSet` & `AWSManagedRulesSQLiRuleSet` (chống XSS, SQL Injection).
+  - **Rate-based Rule:** Chặn IP gửi quá `1.000 requests / 5 phút` để chống DDoS / spam API upload & tìm kiếm.
 
-## 8. Tiêu chí Nghiệm thu Chung cho Phần Cloud
+### 5.4. Dự toán Chi phí Chi tiết Theo Quy mô Sử dụng (Region Singapore)
 
-1. **Môi trường LocalStack (`docker compose up -d`):** Khởi chạy đủ 5 container (`postgres`, `redis`, `localstack`, `api`, `web`), tự động tạo bucket `utetechstore-assets` và gắn trigger Lambda.
-2. **Luồng Event-Driven thực tế:** Upload 1 ảnh hoặc file PDF vào `raw/` $\rightarrow$ Lambda tự động chạy và xuất ra đủ 3 kích thước Thumbnail (`sm`, `md`, `lg`) + PDF có watermark trong `processed/`.
-3. **Kiểm tra sức khỏe hệ thống:** `GET /health` trả về `HEALTHY` kèm trạng thái kết nối thành công tới cả **Database** và **S3**.
-4. **Hồ sơ triển khai AWS:** Đầy đủ bằng chứng cấu hình IAM Role, Security Group, RDS, CloudWatch Log/Alarm và tài liệu này để phục vụ bảo vệ đồ án.
+| Quy mô | Số lượng PDF & Trang | Dung lượng S3 (`raw` + `processed`) | Lưu lượng Lambda / SQS | Chi phí ước tính / tháng |
+| :--- | :--- | :--- | :--- | :---: |
+| **Mức 1: Đồ án / Demo (Free Tier)** | 10–50 files (~586–2.500 trang) | ~0.5 GB | < 5.000 requests, < 2 GB CloudFront | **\$0 – \$2** *(nếu dùng Free Tier EC2/RDS `t3.micro`)* |
+| **Mức 2: Vận hành thực tế nhỏ** | 500 files (~25.000 trang/tháng) | ~10 GB (có Lifecycle IA) | ~50.000 SQS/Lambda req, 20 GB CloudFront | **~\$35 – \$55 / tháng** *(EC2 `t3.small` + RDS `db.t3.micro`)* |
+| **Mức 3: Quy mô Production Multi-AZ** | 5.000+ files (~250.000 trang/tháng) | ~100 GB | ~500.000 req, 150 GB CloudFront + ALB + NAT | **~\$160 – \$220 / tháng** |
