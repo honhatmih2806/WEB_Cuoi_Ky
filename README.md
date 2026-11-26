@@ -1,21 +1,49 @@
-# UteTechStore — Nền Tảng Thương Mại Điện Tử & Hạ Tầng Cloud-Native (AWS)
+# UteTechStore — Nền Tảng Thương Mại Điện Tử & Xử Lý Media Trên Đám Mây (Web + AWS Cloud)
 
 [![Next.js 14](https://img.shields.io/badge/Next.js-14%20App%20Router-black.svg)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.165+-green.svg)](https://fastapi.tiangolo.com/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4+-38bdf8.svg)](https://tailwindcss.com/)
-[![PostgreSQL / SQLite](https://img.shields.io/badge/Database-RDS%20PostgreSQL%20%7C%20SQLite-indigo.svg)](https://www.postgresql.org/)
-[![AWS Cloud](https://img.shields.io/badge/Cloud-AWS%20S3%20%7C%20SQS%20%7C%20Lambda%20%7C%20LocalStack-orange.svg)](https://aws.amazon.com/)
-[![Status](https://img.shields.io/badge/Status-Active%20Development-emerald.svg)]()
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4+-blue.svg)](https://www.typescriptlang.org/)
+[![Python](https://img.shields.io/badge/Python-3.12+-yellow.svg)](https://python.org/)
+[![AWS Cloud](https://img.shields.io/badge/AWS-S3%20%7C%20SQS%20%7C%20Lambda%20%7C%20RDS-orange.svg)](./docs/CLOUD_ARCHITECTURE_AWS.md)
+[![Database](https://img.shields.io/badge/Database-SQLite%20%7C%20PostgreSQL-indigo.svg)](https://www.postgresql.org/)
 
-> **UteTechStore** là nền tảng thương mại điện tử chuyên phân phối các thiết bị điện tử & công nghệ cao cấp, được thiết kế theo **kiến trúc Cloud-Native trên AWS** kết hợp hệ thống xử lý ảnh sản phẩm và PDF Catalogue/Datasheet tự động (**Thumbnail & Watermark Event-Driven**).
+> **UteTechStore** là nền tảng thương mại điện tử thiết bị công nghệ cao cấp kết hợp kiến trúc **Cloud-Native trên AWS** (tự động tạo Thumbnail 16:9 và đóng dấu Watermark cho ảnh sản phẩm & Catalogue/Datasheet PDF). Dự án được xây dựng với giao diện tối giản, tươi sáng, tích hợp đầy đủ quy trình mua sắm, định giá thu cũ đổi mới và triển khai hạ tầng đám mây chuẩn **Well-Architected Framework**.
 
 ---
 
-## 🌐 Đường Dẫn Truy Cập Local
+## 🌐 Đường Dẫn Truy Cập Nhanh
 
 * **Cửa Hàng Trực Tuyến (Next.js 14):** [http://localhost:3000](http://localhost:3000)
 * **Tài Liệu Backend API (Swagger UI):** [http://localhost:8000/docs](http://localhost:8000/docs)
-* **Kiểm Tra Trạng Thái Hệ Thống:** [http://localhost:8000/health](http://localhost:8000/health)
+* **Kiểm Tra Sức Khỏe Hệ Thống:** [http://localhost:8000/health](http://localhost:8000/health)
+* **Tài Liệu Kiến Trúc Đám Mây AWS:** [docs/CLOUD_ARCHITECTURE_AWS.md](./docs/CLOUD_ARCHITECTURE_AWS.md)
+
+---
+
+## ☁️ Kiến Trúc Hệ Thống & Tích Hợp Cloud
+
+Hệ thống kết hợp giữa **Web Application (Next.js 14 + FastAPI)** và **Hạ tầng Đám mây AWS** (bao phủ đầy đủ 10 Modules AWS Cloud Foundations):
+
+* **Networking & Bảo mật biên:** `Route 53` $\rightarrow$ `CloudFront (HTTPS/ACM + AWS WAF)` $\rightarrow$ `Application Load Balancer (ALB)` phân tải trên 2 Availability Zones (`ap-southeast-1a`, `1b`).
+* **VPC & Security:** VPC `10.0.0.0/16` tách biệt Public Subnet (ALB, NAT Gateway) và Private Subnet (App EC2/ECS, RDS PostgreSQL, Redis), áp dụng **IAM Least Privilege**, **Security Groups 3 lớp** và **AWS Secrets Manager**.
+* **Xử lý Media Bất đồng bộ (Event-Driven):** Upload ảnh sản phẩm / PDF Catalogue lên **Amazon S3 (`raw/`)** qua Presigned URL $\rightarrow$ **Amazon SQS (kèm DLQ)** $\rightarrow$ **AWS Lambda** *(hoặc ECS Fargate Worker cho file > 200 trang)* tự động sinh Thumbnail (`320×180`, `640×360`, `1280×720`) và đóng Watermark `UteTechStore` vào `processed/`.
+* **Database & Giám sát:** **SQLite (`titan_silicon.db`)** ở Local Dev và **Amazon RDS PostgreSQL 16 (Multi-AZ)** trên Cloud, tích hợp **ElastiCache Redis**, **CloudWatch Logs/Alarms + SNS** và **LocalStack** để chạy mô phỏng AWS ngay trên máy cá nhân.
+
+👉 Xem chi tiết thiết kế mạng, IAM, S3 Lifecycle, Idempotency, RTO/RPO, CI/CD và dự toán chi phí tại: **[docs/CLOUD_ARCHITECTURE_AWS.md](./docs/CLOUD_ARCHITECTURE_AWS.md)**
+
+---
+
+## 👥 Phân Công Nhiệm Vụ Nhóm (4 Thành Viên)
+
+Mỗi thành viên làm việc trên một nhánh riêng (`feature/...`) và sở hữu nhóm file độc lập để tránh xung đột code:
+
+| Thành Viên | Nhóm | Nhánh Git | Trách Nhiệm Chính | Kế Hoạch Chi Tiết |
+| :--- | :---: | :--- | :--- | :--- |
+| **Ngọc Huy** | Cloud 1 | `feature/cloud-s3-lambda` | Amazon S3 (`raw/`, `processed/`), AWS Lambda Thumbnail/Watermark & `s3_service.py` | [KE_HOACH_NGOCHUY_CLOUD_STORAGE_LAMBDA.md](./KE_HOACH_NGOCHUY_CLOUD_STORAGE_LAMBDA.md) |
+| **Trọng Sơn** | Cloud 2 | `feature/cloud-infra-deploy` | Docker + LocalStack, RDS PostgreSQL, VPC/IAM/Security Groups, CloudWatch & CI/CD | [KE_HOACH_TRONGSON_CLOUD_INFRA_DEPLOY.md](./KE_HOACH_TRONGSON_CLOUD_INFRA_DEPLOY.md) |
+| **Huỳnh Hương** | Web 1 | `feature/web-ui-data-media` | Tinh giản Data sản phẩm, Bộ lọc khoảng giá, Modal Định giá Thu cũ & Trang `/documents` | [KE_HOACH_HUYNHHUONG_WEB_DATA_MEDIA_UI.md](./KE_HOACH_HUYNHHUONG_WEB_DATA_MEDIA_UI.md) |
+| **Đăng Khoa** | Web 2 | `feature/web-backend-search-pricing` | Backend Tìm kiếm đa từ khóa/giá, API Định giá Trade-in & API Cloud Documents Bridge | [KE_HOACH_DANGKHOA_WEB_BACKEND_API_SEARCH.md](./KE_HOACH_DANGKHOA_WEB_BACKEND_API_SEARCH.md) |
 
 ---
 
@@ -23,87 +51,87 @@
 
 | Môi Trường / Terminal | Lệnh Thực Thi | Mô Tả |
 | :--- | :--- | :--- |
-| **Windows PowerShell** | `.\start.ps1` | Script chuyên dụng cho PowerShell, tự cấu hình môi trường |
-| **Windows (1-Click UI)** | Nhấp đúp **`start.bat`** *(hoặc `run_store.bat`)* | Tự bật Backend (`:8000`) & Frontend (`:3000`), tự mở trình duyệt |
+| **Windows PowerShell** | `.\start.ps1` | Script chuyên dụng cho PowerShell, tự kích hoạt `.venv` & mở trình duyệt |
+| **Windows (1-Click UI)** | Nhấp đúp **`start.bat`** *(hoặc `run_store.bat`)* | Tự động khởi chạy đồng thời Backend (`:8000`) & Frontend (`:3000`) |
 | **Mọi hệ điều hành (Python)** | `python scripts/start_servers.py` | Chạy đồng thời cả 2 server trên cùng 1 terminal |
-| **Git Bash / Linux / macOS** | `./start.sh` *(hoặc `bash start.sh`)* | Tự nhận diện môi trường Docker / Local Native |
+| **Git Bash / Linux / macOS** | `./start.sh` *(hoặc `bash start.sh`)* | Tự nhận diện Docker Compose hoặc chế độ Local Native |
 
 > [!NOTE]
-> Nếu dùng **Windows PowerShell** (`PS C:\...`), hãy chạy **`.\start.ps1`** hoặc **`.\start.bat`** (không gõ `./start.sh` vì PowerShell không tự thực thi shell script của Linux).
+> Trên **Windows PowerShell (`PS C:\...`)**, hãy dùng **`.\start.ps1`** hoặc **`.\start.bat`**. Không gõ `./start.sh` trong PowerShell vì PowerShell không thực thi trực tiếp shell script của Linux.
 
 ---
 
-## ☁️ Kiến Trúc Cloud & Tính Năng Nổi Bật
+## 🛠️ Cài Đặt Thủ Công Cho Thành Viên Mới
 
-### 1. Kiến Trúc Đám Mây AWS Toàn Diện ([Chi tiết tại đây](./docs/CLOUD_ARCHITECTURE_AWS.md))
-* **Network & Delivery:** VPC `10.0.0.0/16` (Public/Private App/Private DB Subnets trên 2 AZs `ap-southeast-1`), Route 53 + ACM (TLS 1.3) + **CloudFront CDN** + **AWS WAF** + Application Load Balancer (ALB).
-* **Serverless Media Pipeline:** `Amazon S3 (raw/)` $\rightarrow$ `S3 Event Notification` $\rightarrow$ `Amazon SQS + DLQ` $\rightarrow$ `AWS Lambda` *(hoặc `ECS Fargate` cho PDF > 200 trang)* tự động sinh Thumbnail 16:9 (`320×180`, `640×360`, `1280×720`) và đóng Watermark `UteTechStore` vào `processed/`.
-* **Database, Security & Monitoring:** **Amazon RDS PostgreSQL 16 (Multi-AZ)** + **ElastiCache Redis**, **IAM Least Privilege**, **Secrets Manager**, **CloudWatch Logs/Alarms + SNS**.
+### 1. Clone Kho Mã Nguồn
+```bash
+git clone https://github.com/honhatmih2806/WEB_Cuoi_Ky.git
+cd WEB_Cuoi_Ky
+```
 
-### 2. Nền Tảng Web Thương Mại Điện Tử (`Next.js 14` + `FastAPI`)
-* **Giao diện tối giản sáng (Luxury Minimalist):** Tông trắng tinh khiết (`#FFFFFF` / `#F8F9FA`), đường viền mảnh (`#E5E7EB`), typography rõ ràng không lạm dụng icon trang trí.
-* **Tính năng mua sắm đầy đủ:** Tìm kiếm đa từ khóa, lọc theo hãng/danh mục/khoảng giá, công cụ định giá Thu cũ Đổi mới (Trade-in), giỏ hàng thời gian thực (mã `UTEVIP`, `LUXURY`, `UTETECHSTORE`), thanh toán **VietQR**, tra cứu đơn hàng (`ORD-2026-XXXXX`), và cơ chế **Fallback Zero-Downtime**.
+### 2. Khởi chạy Backend (FastAPI)
+```powershell
+python -m venv .venv
+.\.venv\Scripts\activate        # Windows (Mac/Linux: source .venv/bin/activate)
+pip install -r apps/api/requirements.txt
+cd apps/api
+uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```
 
----
-
-## 👥 Phân Công Nhiệm Vụ Đội Ngũ (4 Thành Viên)
-
-| Thành Viên | Nhóm | Nhánh Git | Trách Nhiệm Chính | Kế Hoạch Chi Tiết |
-| :--- | :---: | :--- | :--- | :--- |
-| **Ngọc Huy** | Cloud 1 | `feature/cloud-s3-lambda` | Amazon S3 (`raw/` & `processed/`), `boto3` Service, AWS Lambda Thumbnail & Watermark | [KE_HOACH_NGOCHUY_CLOUD_STORAGE_LAMBDA.md](./KE_HOACH_NGOCHUY_CLOUD_STORAGE_LAMBDA.md) |
-| **Trọng Sơn** | Cloud 2 | `feature/cloud-infra-deploy` | Docker + LocalStack, RDS PostgreSQL, VPC/IAM/SG, ALB/ASG, CloudWatch Logs | [KE_HOACH_TRONGSON_CLOUD_INFRA_DEPLOY.md](./KE_HOACH_TRONGSON_CLOUD_INFRA_DEPLOY.md) |
-| **Huỳnh Hương** | Web 1 | `feature/web-ui-data-media` | Tinh giản Data sản phẩm, UI Lọc giá, Trade-in Modal & Trang Cloud Gallery `/documents` | [KE_HOACH_HUYNHHUONG_WEB_DATA_MEDIA_UI.md](./KE_HOACH_HUYNHHUONG_WEB_DATA_MEDIA_UI.md) |
-| **Đăng Khoa** | Web 2 | `feature/web-backend-search-pricing` | Backend Search/Lọc giá, API Định giá `pricing.py`, Router `documents.py` & `api.ts` | [KE_HOACH_DANGKHOA_WEB_BACKEND_API_SEARCH.md](./KE_HOACH_DANGKHOA_WEB_BACKEND_API_SEARCH.md) |
-
----
-
-## 📁 Cấu Trúc Mã Nguồn
-
-```text
-.
-├── apps/
-│   ├── api/                  # FastAPI Backend (Python 3.12)
-│   │   ├── core/             # Config, Database, ApiResponse Envelope, Exceptions
-│   │   ├── models/           # SQLAlchemy Entities (Product, Category, Order, SlideDocument...)
-│   │   ├── routers/          # API Controllers (products, categories, orders, advisor, pricing, documents)
-│   │   ├── services/         # S3 Service (boto3) & Processing Helpers
-│   │   └── main.py           # FastAPI entry point
-│   └── web/                  # Next.js 14 Frontend (App Router, TypeScript, Tailwind CSS)
-│       └── src/
-│           ├── app/          # App Router (page.tsx, documents/page.tsx, layout.tsx)
-│           ├── components/   # Navbar, HeroBanner, ProductCard, TradeInModal, CartDrawer, CheckoutModal...
-│           └── services/     # API Client & Fallback Data
-├── docs/
-│   └── CLOUD_ARCHITECTURE_AWS.md   # Tài liệu Kiến trúc AWS Cloud toàn diện (Modules 1-10)
-├── scripts/
-│   ├── seed_products.py      # Script nạp dữ liệu sản phẩm vào SQLite/PostgreSQL
-│   └── start_servers.py      # Script chạy nền đồng thời cả Backend và Frontend
-├── start.ps1 / start.bat     # Kịch bản khởi chạy 1-click trên Windows
-├── start.sh / dev.sh         # Kịch bản khởi chạy trên Linux / macOS / Git Bash
-├── docker-compose.yml        # Docker Stack (PostgreSQL, Redis, LocalStack, API, Web)
-└── KE_HOACH_*.md             # 4 tệp kế hoạch chi tiết cho từng thành viên
+### 3. Khởi chạy Frontend (Next.js 14)
+```powershell
+cd apps/web
+npm install
+npm run dev
 ```
 
 ---
 
-## 🔀 Quy Trình Làm Việc Trên Git (Team Workflow)
+## 📁 Cấu Trúc Thư Mục Dự Án
 
-1. **Clone kho mã nguồn:**
-   ```bash
-   git clone https://github.com/honhatmih2806/WEB_Cuoi_Ky.git
-   cd WEB_Cuoi_Ky
-   ```
-2. **Tạo đúng nhánh riêng được phân công (không commit trực tiếp lên `main`):**
-   ```bash
-   git checkout -b <ten-nhanh-cua-ban>
-   ```
-3. **Code, kiểm thử tại local, sau đó commit và push nhánh lên GitHub:**
-   ```bash
-   git add .
-   git commit -m "feat: mô tả công việc đã hoàn thành"
-   git push origin <ten-nhanh-cua-ban>
-   ```
-4. **Tạo Pull Request (PR)** trên GitHub để Trưởng nhóm review và merge vào `main`.
+```text
+.
+├── apps/
+│   ├── api/                                      # Backend FastAPI (Python 3.12)
+│   │   ├── core/                                 # Config, Database, Envelope, Exceptions
+│   │   ├── models/                               # SQLAlchemy Entities
+│   │   ├── routers/                              # API Controllers (products, categories, orders, advisor...)
+│   │   └── main.py                               # FastAPI entry point
+│   └── web/                                      # Frontend Next.js 14 (App Router, Tailwind CSS)
+│       └── src/
+│           ├── app/                              # App Router (globals.css, layout.tsx, page.tsx)
+│           ├── components/                       # Navbar, HeroBanner, ProductCard, Cart, Checkout...
+│           ├── services/                         # API Client & Fallback Data
+│           └── types/                            # TypeScript DTOs
+├── docs/
+│   └── CLOUD_ARCHITECTURE_AWS.md                 # Tài liệu Kiến trúc AWS Cloud toàn diện
+├── scripts/
+│   ├── seed_products.py                          # Nạp dữ liệu sản phẩm vào SQLite/PostgreSQL
+│   └── start_servers.py                          # Chạy đồng thời Backend & Frontend
+├── KE_HOACH_NGOCHUY_CLOUD_STORAGE_LAMBDA.md      # Kế hoạch Thành viên Cloud 1
+├── KE_HOACH_TRONGSON_CLOUD_INFRA_DEPLOY.md       # Kế hoạch Thành viên Cloud 2
+├── KE_HOACH_HUYNHHUONG_WEB_DATA_MEDIA_UI.md      # Kế hoạch Thành viên Web 1
+├── KE_HOACH_DANGKHOA_WEB_BACKEND_API_SEARCH.md   # Kế hoạch Thành viên Web 2
+├── docker-compose.yml                            # Môi trường Container (Postgres, Redis, API, Web)
+├── start.ps1 / start.bat / start.sh              # Các kịch bản khởi chạy nhanh
+└── README.md
+```
 
 ---
-© 2026 UteTechStore • Cloud-Native Electronics E-Commerce & Media Processing Platform.
+
+## 🔀 Quy Trình Làm Việc Trên Git
+
+1. Tạo nhánh riêng theo đúng tên nhánh trong bảng phân công:
+   ```bash
+   git checkout -b feature/<ten-nhanh-cua-ban>
+   ```
+2. Code, kiểm thử chạy ổn định trên máy cá nhân, sau đó commit & push:
+   ```bash
+   git add .
+   git commit -m "feat: mo ta ngan gon cong viec"
+   git push origin feature/<ten-nhanh-cua-ban>
+   ```
+3. Tạo **Pull Request (PR)** trên GitHub để nhóm trưởng review và merge vào `main`.
+
+---
+© 2026 **UteTechStore** • Cloud-Native E-Commerce & Automated Media Processing Platform.
