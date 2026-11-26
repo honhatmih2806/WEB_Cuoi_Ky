@@ -19,9 +19,9 @@
 3. **Thống nhất Cổng API & Bảo vệ truy cập (API Exposure):**
    - **Lựa chọn:** `Route 53 (DNS)` $\rightarrow$ `Amazon CloudFront (HTTPS/ACM + AWS WAF)` $\rightarrow$ `Application Load Balancer (ALB)` $\rightarrow$ `Next.js (:3000)` & `FastAPI (:8000)`.
    - **Lý do:** Không dùng API Gateway gọi thẳng Lambda cho các nghiệp vụ Web. Mọi API đều đi qua **FastAPI** để dùng chung xác thực, `ApiResponse`, `MetaPagination` và sinh **S3 Presigned URL** cho client upload trực tiếp lên S3.
-4. **Giải pháp cho Rủi ro PDF Lớn (> 200 trang hoặc > 100MB):**
-   - Với bộ 10 slide hiện tại (32–89 trang/file, tổng 586 trang), **AWS Lambda** (timeout `15 phút`, RAM `2048 MB`, `/tmp` `2048 MB`) xử lý mỗi file chỉ mất ~5–15 giây.
-   - **Phương án Hybrid dự phòng:** Nếu kích thước PDF > `50MB` hoặc > `200 trang`, FastAPI đẩy job sang **SQS Large-Job Queue** để **ECS Fargate Worker** (không giới hạn 15 phút) xử lý.
+4. **Giải pháp cho Rủi ro Xử lý Ảnh & PDF Lớn:**
+   - Với ảnh sản phẩm và PDF Catalogue/Datasheet thông thường, **AWS Lambda** (timeout `15 phút`, RAM `2048 MB`, `/tmp` `2048 MB`) xử lý nhanh trong vài giây.
+   - **Phương án Hybrid dự phòng:** Nếu người dùng upload file PDF dung lượng lớn (`> 50MB` hoặc `> 200 trang`), FastAPI định tuyến job sang **SQS Large-Job Queue** để **ECS Fargate Worker** (không bị giới hạn 15 phút của Lambda) xử lý.
 
 ---
 
@@ -117,7 +117,7 @@ flowchart LR
 | **Monitoring & Alerting** | FastAPI xuất **Structured JSON Logs** (`timestamp`, `level`, `request_id`, `path`, `latency_ms`) về **CloudWatch Logs**. Tạo Dashboard theo dõi Latency, Error Rate, SQS Queue Depth. Cấu hình **CloudWatch Alarm** bắn cảnh báo qua **Amazon SNS (Email)** khi: `DLQ Messages > 0`, `HTTP 5xx > 5 trong 5 phút`, hoặc `RDS CPU > 80%`. |
 | **Retry & Idempotency** | Kết hợp `(doc_id, s3_etag)` làm **Idempotency Key**. Khi Lambda/Worker nhận message từ SQS, kiểm tra nếu `status == 'COMPLETED'` và `s3_etag` trùng khớp thì bỏ qua ngay (`ack` SQS), đảm bảo S3 gửi lại event cũng không tạo trùng bản ghi hay ghi đè sai. |
 | **Backup, Recovery & DR** | • **Database:** Bật RDS Automated Backups (lưu 7 ngày) + Point-in-Time Recovery (PITR).<br>• **S3:** Bật S3 Versioning để phục hồi file tức thì.<br>• **Mục tiêu khôi phục:** **RTO $\le$ 15 phút** (khởi tạo lại EC2/ECS từ Docker Image + Terraform), **RPO $\le$ 5 phút** (dựa trên RDS PITR Transaction Logs & S3 Versioning). |
-| **Performance & Benchmark** | Kiểm thử tải đồng thời 10 file (586 trang) qua SQS: giới hạn bộ nhớ Lambda `2048 MB`, xóa file tạm trong `/tmp` ngay sau mỗi job (`finally` block) để tái sử dụng container ấm (warm start) không bị đầy `/tmp`. |
+| **Performance & Benchmark** | Kiểm thử tải đồng thời các job upload ảnh/PDF qua SQS: giới hạn bộ nhớ Lambda `2048 MB`, xóa file tạm trong `/tmp` ngay sau mỗi job (`finally` block) để tái sử dụng container ấm (warm start) không bị đầy `/tmp`. |
 
 ---
 
@@ -145,6 +145,26 @@ flowchart LR
 
 | Quy mô | Số lượng PDF & Trang | Dung lượng S3 (`raw` + `processed`) | Lưu lượng Lambda / SQS | Chi phí ước tính / tháng |
 | :--- | :--- | :--- | :--- | :---: |
-| **Mức 1: Đồ án / Demo (Free Tier)** | 10–50 files (~586–2.500 trang) | ~0.5 GB | < 5.000 requests, < 2 GB CloudFront | **\$0 – \$2** *(nếu dùng Free Tier EC2/RDS `t3.micro`)* |
+| **Mức 1: Đồ án / Demo (Free Tier)** | 10–50 files tài liệu/ảnh sản phẩm | ~0.5 GB | < 5.000 requests, < 2 GB CloudFront | **\$0 – \$2** *(nếu dùng Free Tier EC2/RDS `t3.micro`)* |
 | **Mức 2: Vận hành thực tế nhỏ** | 500 files (~25.000 trang/tháng) | ~10 GB (có Lifecycle IA) | ~50.000 SQS/Lambda req, 20 GB CloudFront | **~\$35 – \$55 / tháng** *(EC2 `t3.small` + RDS `db.t3.micro`)* |
 | **Mức 3: Quy mô Production Multi-AZ** | 5.000+ files (~250.000 trang/tháng) | ~100 GB | ~500.000 req, 150 GB CloudFront + ALB + NAT | **~\$160 – \$220 / tháng** |
+
+
+---
+
+## 6. Bảng Đối chiếu Đáp ứng Toàn bộ Kiến thức Môn học (10 Modules Checklist)
+
+Bảng dưới đây dùng để kiểm chứng kiến trúc **UteTechStore** đã bao phủ đầy đủ các từ khóa và khái niệm trọng tâm trong 10 bài học của môn học:
+
+| Bài học (Module) | Nội dung / Keyword trọng tâm | Đã ứng dụng vào đồ án `UteTechStore` |
+| :--- | :--- | :--- |
+| **Module 1** | Cloud Concepts (On-demand, Elasticity, Pay-as-you-go) | Tách lớp Web/API, Storage, Worker độc lập để co giãn theo tải |
+| **Module 2** | Cloud Economics, TCO, Pricing Calculator | Bảng dự toán chi phí 3 mức + Lifecycle S3 + tận dụng Free Tier |
+| **Module 3** | Global Infrastructure (Region, AZ, Edge Location) | Region `ap-southeast-1`, Multi-AZ (`1a`/`1b`), CloudFront Edge |
+| **Module 4** | Cloud Security (IAM Least Privilege, Security Groups, Secrets) | IAM Roles theo prefix S3, Security Groups 3 lớp, Secrets Manager |
+| **Module 5** | Networking & Content Delivery (VPC, Subnets, NAT, CloudFront, Route 53) | VPC `10.0.0.0/16` Public/Private, S3 Gateway Endpoint, Route 53 + ACM |
+| **Module 6** | Compute (EC2, ECS/Fargate, AWS Lambda) | EC2/ECS chạy Next.js & FastAPI; Lambda/Fargate xử lý Thumbnail/Watermark |
+| **Module 7** | Storage (Amazon S3, Encryption, Versioning, Lifecycle) | S3 `utetechstore-assets` (`raw/`, `processed/`), Block Public Access, SSE-S3 |
+| **Module 8** | Databases (Amazon RDS PostgreSQL, ElastiCache Redis) | RDS PostgreSQL Multi-AZ (chuyển từ SQLite qua `DATABASE_URL`) + Redis |
+| **Module 9** | Cloud Architecture (Well-Architected Framework, Decoupling, DR) | Mô hình `S3 -> SQS (DLQ) -> Worker`, Idempotency, RTO/RPO |
+| **Module 10** | Automatic Scaling & Monitoring (ALB, ASG, CloudWatch, SNS) | ALB Health Check, ASG CPU > 70%, CloudWatch JSON Logs + SNS Alert |
